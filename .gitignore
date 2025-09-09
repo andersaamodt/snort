@@ -1,0 +1,7 @@
+core/.env
+core/public/*
+!core/public/.gitkeep
+cache/
+modules/*/node/node_modules/
+modules/*/node/package-lock.json
+

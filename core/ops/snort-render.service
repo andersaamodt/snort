@@ -1,0 +1,12 @@
+[Unit]
+Description=Snort render and release
+After=network.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/snort/snort.env
+ExecStart=/usr/bin/make -C "$SNORT_ROOT/core" render release
+
+[Install]
+WantedBy=multi-user.target
+
