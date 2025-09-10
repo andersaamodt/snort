@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck shfmt bats redis-server ffmpeg
+      - name: Install Node dependencies
+        run: |
+          npm ci --prefix modules/realtime/node
+      - name: Run shellcheck
+        run: shellcheck $(git ls-files '*.sh')
+      - name: Run shfmt
+        run: shfmt -i 2 -sr -d $(git ls-files '*.sh' '*.bats')
+      - name: Run tests
+        run: bats $(git ls-files '*.bats')

@@ -1,0 +1,11 @@
+[Unit]
+Description=Snort realtime REST publisher
+After=network.target
+
+[Service]
+EnvironmentFile=/etc/snort/snort.env
+ExecStart=/usr/local/lib/snort/modules/realtime/scripts/api.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

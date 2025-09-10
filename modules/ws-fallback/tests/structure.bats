@@ -23,3 +23,7 @@ setup() {
 @test "module has scripts directory" {
   [ -d scripts ]
 }
+
+@test "module has systemd service" {
+  [ -f ops/snort-ws-fallback.service ]
+}

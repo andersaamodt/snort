@@ -1,0 +1,12 @@
+[Unit]
+Description=Snort unix-auth fcgi helper
+After=network.target
+
+[Service]
+EnvironmentFile=/etc/snort/snort.env
+ExecStart=/usr/bin/spawn-fcgi -s "$RUNTIME_ROOT/unix-auth.sock" -M 766 -U root -G root /usr/bin/fcgiwrap
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+

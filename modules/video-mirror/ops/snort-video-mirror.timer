@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Snort video mirror periodically
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=30min
+Unit=snort-video-mirror.service
+
+[Install]
+WantedBy=timers.target

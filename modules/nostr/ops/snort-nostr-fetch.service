@@ -1,0 +1,11 @@
+[Unit]
+Description=Snort Nostr fetcher
+After=network.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/snort/snort.env
+ExecStart=/usr/local/lib/snort/modules/nostr/scripts/fetch.sh
+
+[Install]
+WantedBy=multi-user.target
