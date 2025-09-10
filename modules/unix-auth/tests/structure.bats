@@ -23,3 +23,11 @@ setup() {
 @test "module has scripts directory" {
   [ -d scripts ]
 }
+
+@test "module has systemd unit" {
+  [ -f ops/snort-unix-helper.service ]
+}
+
+@test "module has nginx snippet" {
+  [ -f ops/nginx.conf ]
+}

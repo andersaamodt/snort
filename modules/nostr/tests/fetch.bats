@@ -5,6 +5,7 @@ setup() {
   cd "$MODULE_DIR"
   TMPDIR="$(mktemp -d)"
   export CACHE_ROOT="$TMPDIR/cache"
+  export LOG_ROOT="$TMPDIR/logs"
   mkdir -p "$TMPDIR/bin"
   PATH="$TMPDIR/bin:$PATH"
 
@@ -70,6 +71,8 @@ teardown() {
   [ -f "$CACHE_ROOT/nostr-cache/profiles/npub1test.json" ]
   [ -f "$CACHE_ROOT/nostr-cache/replies/slug-a/reply1.json" ]
   [ -f "$CACHE_ROOT/nostr-cache/zaps/slug-a/zap1.json" ]
+  [ -f "$LOG_ROOT/nostr-fetch.log" ]
+  grep -q 'fetch start' "$LOG_ROOT/nostr-fetch.log"
   grep -q 'Alice' "$CACHE_ROOT/nostr-cache/profiles/npub1test.json"
   slug=$(jq -r '.[0]' "$CACHE_ROOT/nostr-cache/index.json")
   [ "$slug" = "slug-a" ]

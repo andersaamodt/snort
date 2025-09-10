@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Snort Nostr fetcher
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=15min
+Unit=snort-nostr-fetch.service
+
+[Install]
+WantedBy=timers.target

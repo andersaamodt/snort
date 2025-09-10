@@ -23,3 +23,9 @@ setup() {
 @test "module has scripts directory" {
   [ -d scripts ]
 }
+
+@test "module has systemd assets" {
+  [ -d ops ]
+  [ -f ops/snort-video-mirror.service ]
+  [ -f ops/snort-video-mirror.timer ]
+}

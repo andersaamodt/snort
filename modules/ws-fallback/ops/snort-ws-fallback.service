@@ -1,0 +1,11 @@
+[Unit]
+Description=Snort ws-fallback broker
+After=network.target
+
+[Service]
+EnvironmentFile=/etc/snort/snort.env
+ExecStart=/usr/local/lib/snort/modules/ws-fallback/scripts/broker.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

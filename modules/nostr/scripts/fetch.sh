@@ -4,6 +4,11 @@ set -euo pipefail
 CACHE_DIR="${CACHE_ROOT}/nostr-cache"
 mkdir -p "$CACHE_DIR/posts" "$CACHE_DIR/profiles" "$CACHE_DIR/replies" "$CACHE_DIR/zaps"
 
+LOG_ROOT="${LOG_ROOT:-/tmp}"
+mkdir -p "$LOG_ROOT"
+exec >> "${LOG_ROOT}/nostr-fetch.log" 2>&1
+echo "$(date -Is) fetch start"
+
 RELAYS_READ="${RELAYS_READ:-}"
 AUTHOR_NPUBS="${AUTHOR_NPUBS:-}"
 
@@ -52,3 +57,5 @@ for slug in "${!EVENT_IDS[@]}"; do
     echo "$zap" > "$CACHE_DIR/zaps/$slug/$zid.json"
   done
 done
+
+echo "$(date -Is) fetch complete"
