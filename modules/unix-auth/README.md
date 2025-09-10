@@ -37,6 +37,7 @@ provided public key as `authorized_keys`.
 * Username already exists on the system.
 * Signature does not verify against the provided public key.
 * Challenge cannot be issued under `$RUNTIME_ROOT`.
+
 * Group specified in `UNIX_DEFAULT_GROUP` is missing.
 * Provisioning attempted when `UNIX_PROVISION_ALLOWED` is not `1`.
 
