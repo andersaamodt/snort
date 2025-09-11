@@ -1,0 +1,11 @@
+pipeline:
+  lint:
+    image: alpine:3.18
+    commands:
+      - apk add --no-cache bash make shellcheck shfmt bats
+      - make lint
+  test:
+    image: alpine:3.18
+    commands:
+      - apk add --no-cache bash make shellcheck shfmt bats jq lowdown
+      - make test
