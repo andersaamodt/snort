@@ -5,6 +5,13 @@ setup() {
   cd "$ROOT_DIR"
   TMPDIR="$(mktemp -d)"
   export CACHE_ROOT="$TMPDIR/cache"
+  PATH="$TMPDIR/bin:$PATH"
+  mkdir -p "$TMPDIR/bin"
+  cat << 'EOF' > "$TMPDIR/bin/nostr-cli"
+#!/usr/bin/env bash
+echo '[]'
+EOF
+  chmod +x "$TMPDIR/bin/nostr-cli"
 }
 
 teardown() {
