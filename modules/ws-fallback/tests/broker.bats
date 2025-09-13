@@ -3,10 +3,10 @@
 setup_file() {
   cd "$(dirname "$BATS_TEST_FILENAME")/.."
   if ! command -v redis-server > /dev/null; then
-    apt-get update > /dev/null && apt-get install -y redis-server > /dev/null
+    skip "redis-server not installed"
   fi
   if ! command -v websocketd > /dev/null; then
-    apt-get update > /dev/null && apt-get install -y websocketd > /dev/null
+    skip "websocketd not installed"
   fi
   pkill websocketd > /dev/null 2>&1 || true
   npm --prefix node install > /dev/null 2>&1
