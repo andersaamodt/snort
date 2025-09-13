@@ -15,10 +15,13 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y shellcheck shfmt bats redis-server ffmpeg
+          sudo apt-get install -y shellcheck shfmt bats redis-server ffmpeg curl
+          curl -L https://github.com/joewalnes/websocketd/releases/download/v0.4.1/websocketd-0.4.1_amd64.deb -o websocketd.deb
+          sudo dpkg -i websocketd.deb
       - name: Install Node dependencies
         run: |
-          npm ci --prefix modules/realtime/node
+          npm install --prefix modules/realtime/node
+          npm install --prefix modules/ws-fallback/node
       - name: Run shellcheck
         run: shellcheck $(git ls-files '*.sh')
       - name: Run shfmt
