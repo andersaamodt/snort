@@ -3,6 +3,7 @@
 setup() {
   ROOT_DIR="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
   cd "$ROOT_DIR"
+  PATH="$ROOT_DIR/tests/bin:$PATH"
   CACHE_DIR="$ROOT_DIR/cache"
   mkdir -p "$CACHE_DIR/nostr-cache/posts"
   cat > "$CACHE_DIR/nostr-cache/posts/hello.json" << 'JSON'

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Minimal lowdown stub for tests
+# Converts Markdown headings and paragraphs to HTML
+input=$(cat)
+# handle heading: first line starting with '# '
+if [[ $input == \#* ]]; then
+  first_line=${input%%$'\n'*}
+  rest=${input#*$'\n'}
+  title=${first_line#\# }
+  slug=$(printf '%s' "$title" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '-')
+  printf '<h1 id="%s">%s</h1>\n' "$slug" "$title"
+  if [[ -n $rest ]]; then
+    printf '<p>%s</p>\n' "$rest"
+  fi
+else
+  printf '<p>%s</p>\n' "$input"
+fi
