@@ -13,6 +13,7 @@ setup() {
 }
 
 @test "creates user and installs key" {
+  [ "$EUID" -eq 0 ] || skip "requires root"
   username="snorttestuser"
   group="snortgrp"
   keyfile="$BATS_TEST_TMPDIR/id_ed25519.pub"
