@@ -1,5 +1,9 @@
 #!/usr/bin/env bats
 
+setup() {
+  cd "$(dirname "$BATS_TEST_FILENAME")/.."
+}
+
 @test "ops files provide sample configs" {
   [ -f ops/nginx.conf ]
   grep -q 'server {' ops/nginx.conf
