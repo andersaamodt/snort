@@ -16,3 +16,4 @@ test:
 	shfmt -i 2 -sr -d scripts tests
 	shellcheck scripts/*.sh
 	bats tests
+	node --test tests/snort.test.mjs tests/snort.integration.test.mjs
