@@ -48,6 +48,10 @@ This rsyncs the build to `$SITE_ROOT/current` for serving.
 | `LOG_ROOT` | Log files |
 | `RUNTIME_ROOT` | PID files, sockets, temporary data |
 | `MODULES` | Comma-separated modules to enable |
+| `INTERACT_ENABLE` | `1` enables the client module for live replies |
+| `INTERACT_LIMIT` | Max replies/reactions fetched per subscription |
+| `INTERACT_SHOW_REPLY` | Reveal the Reply button when NIP-07 is present |
+| `INTERACT_RELAYS` | JSON array of relay WebSocket endpoints |
 
 ## Failure modes
 

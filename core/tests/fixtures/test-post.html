@@ -1,11 +1,24 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>Snort</title></head>
-<body>
+<head>
+  <meta charset="utf-8">
+  <title>Snort</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self'; script-src 'self'">
+</head>
+<body data-event-id="" data-addr="30023:author:test-post" data-author-pubkey="author" data-relays="[&quot;/nostr&quot;]" data-limit="80" data-show-reply="1">
 <header><h1>Snort</h1></header>
-
+<main>
 <h1 id="hello">Hello</h1>
 <p>Body</p>
+</main>
+<aside id="reactions" aria-label="Reactions">
+  <span data-reaction="+">0</span>
+  <span data-reaction="❤️">0</span>
+</aside>
+<section id="replies" aria-live="polite"></section>
+<button id="load-more" hidden>Load more</button>
+<button id="reply-btn" hidden>Reply</button>
+<script type="module" src="/static/js/snort.js" defer></script>
 <footer><p>Footer</p></footer>
 </body>
 </html>

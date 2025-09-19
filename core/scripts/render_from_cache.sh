@@ -12,6 +12,20 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="$ROOT_DIR/.env"
 
+# Escape HTML special characters so attribute values stay well-formed even when
+# relay URLs or other fields contain quotes or angle brackets.
+html_escape() {
+  python3 - "$1" "${2:-}" << 'PY'
+import html, sys
+value = sys.argv[1]
+keep_single = bool(sys.argv[2:])
+escaped = html.escape(value, quote=True)
+if keep_single:
+    escaped = escaped.replace("&#x27;", "'")
+print(escaped)
+PY
+}
+
 # shellcheck source=/dev/null
 [[ -f "$ENV_FILE" ]] && source "$ENV_FILE"
 
@@ -20,8 +34,87 @@ TEMPLATE_DIR="$ROOT_DIR/templates"
 PUBLIC_DIR="$ROOT_DIR/public"
 export PUBLIC_DIR
 
-# Ensure the output directory exists before we start writing files.
+INTERACT_ENABLE="${INTERACT_ENABLE:-1}"
+if [[ "$INTERACT_ENABLE" != "0" ]]; then
+  INTERACT_ENABLE=1
+fi
+
+INTERACT_LIMIT="${INTERACT_LIMIT:-80}"
+if ! [[ "$INTERACT_LIMIT" =~ ^[0-9]+$ ]]; then
+  INTERACT_LIMIT=80
+fi
+
+INTERACT_SHOW_REPLY="${INTERACT_SHOW_REPLY:-1}"
+if [[ "$INTERACT_SHOW_REPLY" != "0" ]]; then
+  INTERACT_SHOW_REPLY=1
+fi
+
+INTERACT_RELAYS_RAW="${INTERACT_RELAYS:-}"
+if [[ -z "$INTERACT_RELAYS_RAW" ]]; then
+  INTERACT_RELAYS_RAW='["/nostr"]'
+fi
+
+INTERACT_RELAYS_JSON=$(printf '%s' "$INTERACT_RELAYS_RAW" |
+  jq -c '[.[]? | select(type=="string") | gsub("^\\s+|\\s+$"; "") | select(length > 0)]' 2> /dev/null || echo '[]')
+
+mapfile -t INTERACT_RELAYS_LIST < <(printf '%s' "$INTERACT_RELAYS_JSON" | jq -r '.[]')
+
+CONNECT_SRC="'self'"
+declare -A CONNECT_SEEN=()
+CONNECT_SEEN["'self'"]=1
+for raw in "${INTERACT_RELAYS_LIST[@]}"; do
+  relay=""
+  case "$raw" in
+  '')
+    continue
+    ;;
+  /*)
+    # Relative paths are already covered by 'self'.
+    continue
+    ;;
+  wss://* | ws://*)
+    relay="$raw"
+    ;;
+  https://*)
+    relay="wss://${raw#https://}"
+    ;;
+  http://*)
+    relay="ws://${raw#http://}"
+    ;;
+  *)
+    if [[ "$raw" == *"://"* ]]; then
+      relay="$raw"
+    else
+      continue
+    fi
+    ;;
+  esac
+  [[ -n "$relay" ]] || continue
+  if [[ -z "${CONNECT_SEEN[$relay]:-}" ]]; then
+    CONNECT_SRC+=" $relay"
+    CONNECT_SEEN[$relay]=1
+  fi
+done
+
+HEADER_TMP="$(mktemp)"
+trap 'rm -f "$HEADER_TMP"' EXIT
+CONNECT_HTML=$(html_escape "$CONNECT_SRC" keep)
+python3 - "$TEMPLATE_DIR/header.html" "$HEADER_TMP" "$CONNECT_HTML" << 'PY'
+import sys
+source, dest, connect = sys.argv[1:4]
+with open(source, "r", encoding="utf-8") as fh:
+    template = fh.read()
+with open(dest, "w", encoding="utf-8") as fh:
+    fh.write(template.replace("__CONNECT_SRC__", connect, 1))
+PY
+
+# Ensure the output directory exists before we start writing files and copy static assets.
 mkdir -p "$PUBLIC_DIR"
+STATIC_SRC="${STATIC_SRC:-$ROOT_DIR/static}"
+if [[ -d "$STATIC_SRC" ]]; then
+  mkdir -p "$PUBLIC_DIR/static"
+  cp -R "$STATIC_SRC"/. "$PUBLIC_DIR/static/"
+fi
 
 # Location of cached posts and the optional index file listing known slugs.
 POSTS_DIR="$CACHE_ROOT/nostr-cache/posts"
@@ -71,13 +164,42 @@ for slug in "${slugs[@]}"; do
     AUTHOR_POSTS["$author"]+="$slug\n"
   fi
 
+  event_id="$(jq -r '.id // empty' "$post")"
+  addr="30023:${author}:${slug}"
+
+  event_attr="$(html_escape "$event_id")"
+  addr_attr="$(html_escape "$addr")"
+  author_attr="$(html_escape "$author")"
+  relays_attr="$(html_escape "$INTERACT_RELAYS_JSON")"
+  limit_attr="$(html_escape "$INTERACT_LIMIT")"
+  show_reply_attr="$(html_escape "$INTERACT_SHOW_REPLY")"
+
   # Write the rendered post using the shared header/footer templates.
   outdir="$PUBLIC_DIR/posts/$slug"
   mkdir -p "$outdir"
+  body_attrs="data-event-id=\"$event_attr\" data-addr=\"$addr_attr\" data-author-pubkey=\"$author_attr\" data-relays=\"$relays_attr\" data-limit=\"$limit_attr\" data-show-reply=\"$show_reply_attr\""
+  python3 - "$HEADER_TMP" "$outdir/index.html" "$body_attrs" << 'PY'
+import sys
+source, dest, attrs = sys.argv[1:4]
+with open(source, "r", encoding="utf-8") as fh:
+    template = fh.read()
+with open(dest, "w", encoding="utf-8") as fh:
+    fh.write(template.replace("<body>", f"<body {attrs}>", 1))
+PY
   # shellcheck disable=SC2129
-  cat "$TEMPLATE_DIR/header.html" > "$outdir/index.html"
-  # shellcheck disable=SC2129
-  printf '%s\n' "$body" >> "$outdir/index.html"
+  printf '<main>\n%s\n</main>\n' "$body" >> "$outdir/index.html"
+  cat >> "$outdir/index.html" << 'HTML'
+<aside id="reactions" aria-label="Reactions">
+  <span data-reaction="+">0</span>
+  <span data-reaction="❤️">0</span>
+</aside>
+<section id="replies" aria-live="polite"></section>
+<button id="load-more" hidden>Load more</button>
+<button id="reply-btn" hidden>Reply</button>
+HTML
+  if [[ "$INTERACT_ENABLE" != 0 ]]; then
+    echo '<script type="module" src="/static/js/snort.js" defer></script>' >> "$outdir/index.html"
+  fi
   cat "$TEMPLATE_DIR/footer.html" >> "$outdir/index.html"
 done
 
@@ -88,7 +210,7 @@ for slug in "${!TITLES[@]}"; do
 done
 
 # shellcheck disable=SC2129
-cat "$TEMPLATE_DIR/header.html" > "$PUBLIC_DIR/index.html"
+cat "$HEADER_TMP" > "$PUBLIC_DIR/index.html"
 # shellcheck disable=SC2129
 echo "<ul>" >> "$PUBLIC_DIR/index.html"
 while IFS='|' read -r slug title; do
@@ -103,7 +225,7 @@ for tag in "${!TAG_POSTS[@]}"; do
   outdir="$PUBLIC_DIR/tags/$tag"
   mkdir -p "$outdir"
   # shellcheck disable=SC2129
-  cat "$TEMPLATE_DIR/header.html" > "$outdir/index.html"
+  cat "$HEADER_TMP" > "$outdir/index.html"
   # shellcheck disable=SC2129
   printf '<h1>Tag: %s</h1>\n<ul>\n' "$tag" >> "$outdir/index.html"
   while read -r slug; do
@@ -120,7 +242,7 @@ for author in "${!AUTHOR_POSTS[@]}"; do
   outdir="$PUBLIC_DIR/authors/$author"
   mkdir -p "$outdir"
   # shellcheck disable=SC2129
-  cat "$TEMPLATE_DIR/header.html" > "$outdir/index.html"
+  cat "$HEADER_TMP" > "$outdir/index.html"
   # shellcheck disable=SC2129
   printf '<h1>Author: %s</h1>\n<ul>\n' "$author" >> "$outdir/index.html"
   while read -r slug; do
